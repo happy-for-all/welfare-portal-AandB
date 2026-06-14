@@ -40,7 +40,7 @@
         
         .pro-mode-toggle { background: #eef2ff; padding: 12px; border-radius: 8px; text-align: center; margin-bottom: 20px; border: 1px dashed #a5b4fc; cursor: pointer; color: #4338ca; font-weight: bold; font-size: 0.95rem; transition: 0.3s; }
         .pro-mode-toggle:hover { background: #e0e7ff; }
-        .pro-settings { display: none; background: #ffffff; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #c7d2fe; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        .pro-settings { display: block; background: #ffffff; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #c7d2fe; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
         .checkbox-group { display: flex; flex-direction: column; gap: 10px; margin-top: 10px; }
         .checkbox-label { display: flex; align-items: center; font-size: 0.95rem; cursor: pointer; color: var(--text-main); }
         .checkbox-label input { margin-right: 8px; transform: scale(1.2); }
@@ -86,7 +86,7 @@
         </div>
 
         <div class="pro-mode-toggle" onclick="toggleProMode()">
-            ⚙️ プロ向け：複数サービス横断モードを開く ▼
+            ⚙️ プロ向け：複数サービス横断モードを閉じる ▲
         </div>
         
         <div id="proSettings" class="pro-settings">
@@ -153,7 +153,7 @@
         let displayData = [];
         let currentIndex = 0;
         const ITEMS_PER_PAGE = 10;
-        let isProMode = false;
+        let isProMode = true;
 
         function toggleProMode() {
             const panel = document.getElementById('proSettings');
