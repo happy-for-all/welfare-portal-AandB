@@ -108,7 +108,7 @@
 
         <div class="search-box">
             <h2 style="margin-top: 0; font-size: 1.25rem; line-height: 1.4;">現在地から一番近い<br>施設を探す</h2>
-            <p style="font-size: 0.85rem; color: var(--text-sub); margin-bottom: 20px;">※位置情報はサーバーには送信されません。</p>
+            <p style="font-size: 0.85rem; color: var(--text-sub); margin-bottom: 20px;">※位置情報はサーバーには送信されません。<br>※一番上に表示される施設が最寄りになります。<br>「位置情報」をONにする必要があります。</p>
             <button class="btn-gps" onclick="sortByGPS()">📍 現在地から近い順に探す</button>
 
             <hr style="border: 0; border-top: 1px solid var(--border-color); margin: 25px 0;">
@@ -117,13 +117,20 @@
             <button class="btn-search" onclick="searchByKeyword()">🔍 検索する</button>
         </div>
 
+        
+        <!-- 👑 【アドオン】位置情報の精度に関する誠実な注記案内 -->
+        <div style="font-size: 0.8rem; color: var(--text-sub); margin-bottom: 15px; padding: 12px; background-color: rgba(255,255,255,0.45); border-radius: 8px; border: 1px solid var(--border-color); line-height: 1.5; text-align: left;">
+            💡 <strong>【位置情報の精度について】</strong><br>
+            表示される距離はお使いの端末のGPSから計算しています。元の行政データによっては、住所や座標が「詳細番地」ではなく「市区町村・区役所の代表点」で登録されている場合があり、その場合は距離が一律（例：東大阪市内なら一律約2.2kmなど）で計算・表示されます。お近くの地域にある施設としての目安としてご活用ください。
+        </div>
+
+
         <div id="results"></div>
         <div id="moreContainer" style="text-align: center; display: none;">
             <button class="btn-more" onclick="showMore()">もっと見る ＋</button>
         </div>
 
-        <!-- 👑 Google AdSense 広告ユニット（本番化時にコメントアウトを解除） -->
-        <!--
+       
         <div class="adsense-container" style="text-align: center; margin: 40px 0; min-height: 250px;">
             <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2908004621823900" crossorigin="anonymous"></script>
             <ins class="adsbygoogle"
@@ -134,7 +141,7 @@
                  (adsbygoogle = window.adsbygoogle || []).push({});
             </script>
         </div>
-        -->
+        
 
         <!-- 👑 寄付支援セクション -->
         <div class="donation-box">
