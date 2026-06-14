@@ -7,7 +7,7 @@ import re
 import pandas as pd
 
 # ==========================================
-# 👑 福祉ポータル(AandB): 複数サービス横断・自動ビルドエンジン
+# 👑 福祉ポータル(AandB): 複数サービス横断・自動ビルドエンジン (Ver 1.4.1 安定版)
 # 開発者: ちゃろ ＆ AIバディ
 # ==========================================
 
@@ -79,7 +79,6 @@ def run_build():
     print(f"🌸 福祉ポータル(AandB) 複数サービス自動ビルド開始")
     print("==========================================")
 
-    # 👑 出力先フォルダをロリポップのフォルダ名と完全に一致させました
     target_dir = os.path.join("dist", "welfare-portal-AandB")
     os.makedirs(target_dir, exist_ok=True)
     
@@ -175,17 +174,14 @@ def run_build():
                 "is_approximate": is_approximate
             })
 
+            # 👑 【修正】不要な data.json の重複上書きブロックを完全に削除いたしました。
+            # 各データは専用の JSON ファイルにのみ確実に出力されます。
+
         output_path = os.path.join(target_dir, f"data_{output_key}.json")
         with open(output_path, "w", encoding="utf-8") as f:
             json.dump(facilities, f, ensure_ascii=False, indent=2)
             
         summary_logs.append(f" - {service_name}: {len(facilities)}件 生成完了")
-        
-        # 既存互換用
-        if output_key == "shuro_b":
-            legacy_path = os.path.join(target_dir, "data.json")
-            with open(legacy_path, "w", encoding="utf-8") as f:
-                json.dump(facilities, f, ensure_ascii=False, indent=2)
 
     os.system(f"cp index.html {target_dir}/")
     
