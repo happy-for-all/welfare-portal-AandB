@@ -7,26 +7,25 @@ import re
 import pandas as pd
 
 # ==========================================
-# 👑 福祉ポータル(AandB): 複数サービス横断・自動ビルドエンジン (Ver 1.4 新リポジトリ版)
+# 👑 福祉ポータル(AandB): 複数サービス横断・自動ビルドエンジン
 # 開発者: ちゃろ ＆ AIバディ
 # ==========================================
 
-# 👑 新リポジトリにアップロードされた3つのサービスのみを定義
 SERVICE_DEFINITIONS = [
     {
         "zip_file": "sfkopendata_202603_45.zip",
         "service_name": "就労継続支援Ａ型",
-        "output_key": "shuro_a",      # 出力ファイル名: data_shuro_a.json
+        "output_key": "shuro_a",
     },
     {
         "zip_file": "sfkopendata_202603_46.zip",
         "service_name": "就労継続支援Ｂ型",
-        "output_key": "shuro_b",      # 出力ファイル名: data_shuro_b.json
+        "output_key": "shuro_b",
     },
     {
         "zip_file": "sfkopendata_202603_65.zip",
         "service_name": "放課後等デイサービス",
-        "output_key": "houdei",       # 出力ファイル名: data_houdei.json
+        "output_key": "houdei",
     },
 ]
 
@@ -80,7 +79,8 @@ def run_build():
     print(f"🌸 福祉ポータル(AandB) 複数サービス自動ビルド開始")
     print("==========================================")
 
-    target_dir = os.path.join("dist", "happy-for-all")
+    # 👑 出力先フォルダをロリポップのフォルダ名と完全に一致させました
+    target_dir = os.path.join("dist", "welfare-portal-AandB")
     os.makedirs(target_dir, exist_ok=True)
     
     summary_logs = []
@@ -93,7 +93,7 @@ def run_build():
         print(f"\n📡 処理開始: 【{service_name}】 (ファイル: {zip_file_path})")
 
         if not os.path.exists(zip_file_path):
-            print(f"⚠️ [警告] リポジトリ内に『{zip_file_path}』が見つかりません。このサービスをスキップします。")
+            print(f"⚠️ [警告] 『{zip_file_path}』が見つかりません。スキップします。")
             continue
 
         try:
@@ -119,7 +119,6 @@ def run_build():
 
         col_address_city = [col for col in df.columns if "住所" in col and "市区町村" in col]
         if not col_address_city:
-            print(f"❌ 住所列が見つかりません ({service_name})。スキップします。")
             continue
 
         target_col = col_address_city[0]
@@ -158,7 +157,6 @@ def run_build():
                     if key in city and (city.index(key) == 3 or city.index(key) == 0):
                         detected_city = key
                         break
-                
                 if detected_city:
                     lat = MUNICIPAL_COORDS[detected_city]["lat"]
                     lon = MUNICIPAL_COORDS[detected_city]["lon"]
@@ -177,33 +175,26 @@ def run_build():
                 "is_approximate": is_approximate
             })
 
-        # 専用JSONファイルとしての出力
         output_path = os.path.join(target_dir, f"data_{output_key}.json")
         with open(output_path, "w", encoding="utf-8") as f:
             json.dump(facilities, f, ensure_ascii=False, indent=2)
             
-        print(f"✅ {service_name}: {len(facilities)}件のデータを抽出完了 ({output_path})")
         summary_logs.append(f" - {service_name}: {len(facilities)}件 生成完了")
         
-        # 👑 【互換性維持】まだ改修していないindex.htmlをエラーにさせないため、
-        # 就労B型のデータだけは「data.json」という名前でも同時出力しておく
+        # 既存互換用
         if output_key == "shuro_b":
             legacy_path = os.path.join(target_dir, "data.json")
             with open(legacy_path, "w", encoding="utf-8") as f:
                 json.dump(facilities, f, ensure_ascii=False, indent=2)
-            print(f"✅ テスト表示用として '{legacy_path}' も同時に生成しました。")
 
     os.system(f"cp index.html {target_dir}/")
     
     print("\n==========================================")
-    print("🎉 [Phase 1: 全ビルド大成功] 以下のファイルを生成しました:")
-    for log in summary_logs:
-        print(log)
+    for log in summary_logs: print(log)
     print("==========================================")
 
 if __name__ == "__main__":
     try:
         run_build()
     except Exception as e:
-        print(f"❌ [未予期エラー] ビルド中に重大なエラーが発生しました: {e}")
         sys.exit(1)
