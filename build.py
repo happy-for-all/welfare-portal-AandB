@@ -7,7 +7,7 @@ import re
 import pandas as pd
 
 # ==========================================
-# 👑 福祉ポータル(AandB): 複数サービス横断・自動ビルドエンジン (Ver 1.4.1 安定版)
+# 👑 福祉ポータル(AandB): 複数サービス横断・自動ビルドエンジン (Ver 1.4.2 決定版)
 # 開発者: ちゃろ ＆ AIバディ
 # ==========================================
 
@@ -174,15 +174,14 @@ def run_build():
                 "is_approximate": is_approximate
             })
 
-            # 👑 【修正】不要な data.json の重複上書きブロックを完全に削除いたしました。
-            # 各データは専用の JSON ファイルにのみ確実に出力されます。
-
         output_path = os.path.join(target_dir, f"data_{output_key}.json")
         with open(output_path, "w", encoding="utf-8") as f:
             json.dump(facilities, f, ensure_ascii=False, indent=2)
             
         summary_logs.append(f" - {service_name}: {len(facilities)}件 生成完了")
 
+    # 👑 【修正】不要な data.json の重複上書きブロックの削除報告注記を、
+    # 実行効率向上のためループの外側（出力完了ログの前）に移動しました。
     os.system(f"cp index.html {target_dir}/")
     
     print("\n==========================================")
