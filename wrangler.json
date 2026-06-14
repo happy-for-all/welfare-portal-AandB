@@ -3,6 +3,6 @@
   "name": "welfare-portal-aandb",
   "compatibility_date": "2026-06-14",
   "assets": {
-    "directory": "./dist/welfare-portal-AandB"
+    "directory": "./dist"
   }
 }
