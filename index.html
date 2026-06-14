@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%20100%20100%27%3E%3Ctext%20y%3D%270.9em%27%20font-size%3D%2790%27%3E%F0%9F%8C%BF%3C%2Ftext%3E%3C%2Fsvg%3E">
+    <title>就労・発達支援 総合検索ポータル（大阪府版）</title>
+
+    <style>
+        :root {
+            --bg-color: #f4f9f4;
+            --main-green: #5a9e82;
+            --main-blue: #4a90e2;
+            --main-orange: #f39c12;
+            --text-main: #333333;
+            --text-sub: #666666;
+            --card-bg: #ffffff;
+            --border-color: #e2e8f0;
+        }
+        body { background-color: var(--bg-color); color: var(--text-main); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; margin: 0; padding: 0; line-height: 1.6; }
+        .header { background-color: var(--main-green); color: white; text-align: center; padding: 18px 10px; font-weight: bold; font-size: 1.2rem; margin: 0; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px 15px; }
+        .disclaimer { background-color: #fff3cd; color: #856404; padding: 15px; border-radius: 8px; font-size: 0.9rem; margin-bottom: 20px; border: 1px solid #ffeeba; }
+        
+        .pro-mode-toggle { background: #eef2ff; padding: 12px; border-radius: 8px; text-align: center; margin-bottom: 20px; border: 1px dashed #a5b4fc; cursor: pointer; color: #4338ca; font-weight: bold; font-size: 0.95rem; transition: 0.3s; }
+        .pro-mode-toggle:hover { background: #e0e7ff; }
+        .pro-settings { display: none; background: #ffffff; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #c7d2fe; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        .checkbox-group { display: flex; flex-direction: column; gap: 10px; margin-top: 10px; }
+        .checkbox-label { display: flex; align-items: center; font-size: 0.95rem; cursor: pointer; color: var(--text-main); }
+        .checkbox-label input { margin-right: 8px; transform: scale(1.2); }
+
+        .search-box { background: var(--card-bg); padding: 25px 20px; border-radius: 12px; text-align: center; margin-bottom: 25px; box-shadow: 0 4px 6px rgba(0,0,0,0.03); border: 1px solid var(--border-color); }
+        .search-input { width: 100%; padding: 12px; font-size: 1rem; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; margin-bottom: 15px; }
+        .btn-search { background-color: #4b5563; color: white; border: none; padding: 12px 20px; font-size: 1rem; font-weight: bold; border-radius: 8px; width: 100%; cursor: pointer; margin-bottom: 25px; }
+        .btn-gps { background-color: var(--main-green); color: white; border: none; padding: 15px 20px; font-size: 1.1rem; font-weight: bold; border-radius: 30px; width: 100%; cursor: pointer; box-shadow: 0 4px 6px rgba(90, 158, 130, 0.25); }
+        
+        .card { background: var(--card-bg); padding: 20px; border-radius: 12px; margin-bottom: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); border: 1px solid var(--border-color); position: relative; }
+        .card h3 { margin: 10px 0; font-size: 1.15rem; color: var(--text-main); }
+        .card p { margin: 6px 0; font-size: 0.95rem; color: var(--text-main); }
+        .tel-link { color: var(--main-green); font-weight: bold; text-decoration: none; display: inline-block; padding: 5px 0; }
+        
+        .distance-badge { display: inline-block; background-color: #e2e8f0; color: #475569; padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: bold; margin-bottom: 5px; }
+        .approx-note { font-size: 0.75rem; color: #dc2626; margin-top: 4px; display: block; }
+
+        .service-tag { display: inline-block; padding: 4px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: bold; color: white; margin-bottom: 10px; }
+        .tag-shuro-a { background-color: var(--main-blue); }
+        .tag-shuro-b { background-color: var(--main-orange); }
+        .tag-houdei { background-color: #e84393; }
+        .tag-default { background-color: var(--main-green); }
+
+        .btn-more { background-color: #ffffff; color: var(--main-green); border: 2px solid var(--main-green); padding: 12px 20px; font-size: 1rem; font-weight: bold; border-radius: 30px; width: 100%; cursor: pointer; margin-top: 10px; }
+        .btn-top { position: fixed; bottom: 20px; right: 20px; background-color: var(--main-green); color: white; width: 50px; height: 50px; border-radius: 50%; border: none; font-size: 1.5rem; box-shadow: 0 4px 6px rgba(0,0,0,0.3); cursor: pointer; display: none; align-items: center; justify-content: center; z-index: 1000; }
+    </style>
+</head>
+<body>
+
+    <h1 class="header">🌿 まごころ福祉施設ナビ（就労・発達支援）</h1>
+
+    <div class="container">
+        <div class="disclaimer">
+            <strong>【免責事項】</strong><br>
+            当サイトは行政の公開データ（2026年3月時点）を自動整理して表示しています。施設をご検討の際は、必ず直接お問い合わせください。
+        </div>
+
+        <div class="pro-mode-toggle" onclick="toggleProMode()">
+            ⚙️ プロ向け：複数サービス横断モードを開く ▼
+        </div>
+        
+        <div id="proSettings" class="pro-settings">
+            <div style="font-size: 0.9rem; color: var(--text-sub); margin-bottom: 10px;">
+                探したいサービスにチェックを入れてください。複数同時に距離順で検索できます。
+            </div>
+            <div class="checkbox-group">
+                <label class="checkbox-label">
+                    <input type="checkbox" id="chk-shuro-a" value="data_shuro_a.json" checked> 🏷️ 就労継続支援Ａ型（雇用型）
+                </label>
+                <label class="checkbox-label">
+                    <input type="checkbox" id="chk-shuro-b" value="data_shuro_b.json" checked> 🏷️ 就労継続支援Ｂ型（非雇用型）
+                </label>
+                <label class="checkbox-label">
+                    <input type="checkbox" id="chk-houdei" value="data_houdei.json"> 🏷️ 放課後等デイサービス
+                </label>
+            </div>
+        </div>
+
+        <div class="search-box">
+            <h2 style="margin-top: 0; font-size: 1.25rem; line-height: 1.4;">現在地から一番近い<br>施設を探す</h2>
+            <p style="font-size: 0.85rem; color: var(--text-sub); margin-bottom: 20px;">※位置情報はサーバーには送信されません。</p>
+            <button class="btn-gps" onclick="sortByGPS()">📍 現在地から近い順に探す</button>
+
+            <hr style="border: 0; border-top: 1px solid var(--border-color); margin: 25px 0;">
+            <h3 style="font-size: 1rem; color: var(--text-main); margin-top: 0;">住所・施設名で絞り込む</h3>
+            <input type="text" id="searchInput" class="search-input" placeholder="例：東大阪市小阪" onkeypress="handleEnter(event)">
+            <button class="btn-search" onclick="searchByKeyword()">🔍 検索する</button>
+        </div>
+
+        <div id="results"></div>
+        <div id="moreContainer" style="text-align: center; display: none;">
+            <button class="btn-more" onclick="showMore()">もっと見る ＋</button>
+        </div>
+    </div>
+
+    <button id="btnTop" class="btn-top" onclick="scrollToTop()">↑</button>
+
+    <script>
+        let allData = [];
+        let displayData = [];
+        let currentIndex = 0;
+        const ITEMS_PER_PAGE = 10;
+        let isProMode = false;
+
+        function toggleProMode() {
+            const panel = document.getElementById('proSettings');
+            isProMode = !isProMode;
+            panel.style.display = isProMode ? 'block' : 'none';
+            document.querySelector('.pro-mode-toggle').innerText = isProMode 
+                ? '⚙️ プロ向け：複数サービス横断モードを閉じる ▲' 
+                : '⚙️ プロ向け：複数サービス横断モードを開く ▼';
+        }
+
+        async function fetchSelectedData() {
+            document.getElementById('results').innerHTML = `<div style="text-align: center; color: var(--text-sub); padding: 20px;">📡 データを取得中...</div>`;
+            
+            let filesToFetch = [];
+            if (isProMode) {
+                if(document.getElementById('chk-shuro-a').checked) filesToFetch.push('data_shuro_a.json');
+                if(document.getElementById('chk-shuro-b').checked) filesToFetch.push('data_shuro_b.json');
+                if(document.getElementById('chk-houdei').checked) filesToFetch.push('data_houdei.json');
+            } else {
+                filesToFetch = ['data_shuro_a.json', 'data_shuro_b.json'];
+            }
+
+            if (filesToFetch.length === 0) {
+                alert("検索するサービスを1つ以上選択してください。");
+                document.getElementById('results').innerHTML = "";
+                return false;
+            }
+
+            allData = [];
+            try {
+                const fetchPromises = filesToFetch.map(file => fetch('./' + file).then(res => res.json()));
+                const resultsArray = await Promise.all(fetchPromises);
+                
+                resultsArray.forEach(dataArray => {
+                    allData = allData.concat(dataArray);
+                });
+                return true;
+            } catch (error) {
+                console.error(error);
+                document.getElementById('results').innerHTML = `<div style="text-align: center; color: #dc2626;">データの読み込みに失敗しました。</div>`;
+                return false;
+            }
+        }
+
+        async function sortByGPS() {
+            if (!navigator.geolocation) {
+                alert("お使いの端末はGPS機能に対応していません。");
+                return;
+            }
+
+            const success = await fetchSelectedData();
+            if(!success) return;
+
+            document.getElementById('results').innerHTML = `<div style="text-align: center; color: var(--text-sub); padding: 20px;">📍 距離を計算中...</div>`;
+            document.getElementById('moreContainer').style.display = 'none';
+
+            navigator.geolocation.getCurrentPosition(position => {
+                const userLat = position.coords.latitude;
+                const userLon = position.coords.longitude;
+
+                displayData = allData.map(item => {
+                    const dist = calculateDistance(userLat, userLon, item.lat, item.lon);
+                    return { ...item, distance: dist };
+                });
+
+                displayData.sort((a, b) => a.distance - b.distance);
+                
+                currentIndex = 0;
+                document.getElementById('results').innerHTML = "";
+                showMore();
+
+            }, error => {
+                alert("位置情報が取得できませんでした。スマホの設定で許可するか、検索窓をご利用ください。");
+                document.getElementById('results').innerHTML = "";
+            });
+        }
+
+        async function searchByKeyword() {
+            const keyword = document.getElementById('searchInput').value.trim();
+            if (!keyword) {
+                alert("検索キーワードを入力してください。");
+                return;
+            }
+
+            const success = await fetchSelectedData();
+            if(!success) return;
+            
+            displayData = allData.filter(item => {
+                return item.address.includes(keyword) || item.name.includes(keyword);
+            }).map(item => {
+                return { ...item, distance: null };
+            });
+
+            currentIndex = 0;
+            document.getElementById('results').innerHTML = "";
+
+            if (displayData.length === 0) {
+                document.getElementById('results').innerHTML = `<div style="text-align: center; color: var(--text-sub); padding: 20px;">「${keyword}」に一致する施設は見つかりませんでした。</div>`;
+                document.getElementById('moreContainer').style.display = 'none';
+            } else {
+                showMore();
+            }
+        }
+
+        function handleEnter(e) { if (e.key === 'Enter') searchByKeyword(); }
+
+        function showMore() {
+            const resultsDiv = document.getElementById('results');
+            const limit = Math.min(currentIndex + ITEMS_PER_PAGE, displayData.length);
+
+            for (let i = currentIndex; i < limit; i++) {
+                const item = displayData[i];
+                const card = document.createElement('div');
+                card.className = "card";
+                
+                let distanceHtml = "";
+                if (item.distance !== null) {
+                    distanceHtml = `<div class="distance-badge">📍 ここから約 ${item.distance.toFixed(1)} km</div>`;
+                    if (item.is_approximate) {
+                        distanceHtml += `<span class="approx-note">※正確な座標がないため、市役所等からの目安距離です</span>`;
+                    }
+                }
+
+                let tagClass = "tag-default";
+                if (item.service_type === "就労継続支援Ａ型") tagClass = "tag-shuro-a";
+                else if (item.service_type === "就労継続支援Ｂ型") tagClass = "tag-shuro-b";
+                else if (item.service_type === "放課後等デイサービス") tagClass = "tag-houdei";
+
+                let telHtml = "";
+                if (item.tel_clean && item.tel_clean.length > 0) {
+                    telHtml = `<p>📞 電話: <a href="tel:${item.tel_clean}" class="tel-link">${item.tel}</a></p>`;
+                } else {
+                    telHtml = `<p style="color: var(--text-sub);">📞 電話番号情報なし</p>`;
+                }
+
+                card.innerHTML = `
+                    ${distanceHtml}<br>
+                    <span class="service-tag ${tagClass}">${item.service_type}</span>
+                    <h3 style="margin-top:5px;">🏠 ${item.name}</h3>
+                    <p>📍 ${item.address}</p>
+                    ${telHtml}
+                `;
+                resultsDiv.appendChild(card);
+            }
+
+            currentIndex = limit;
+            document.getElementById('moreContainer').style.display = (currentIndex < displayData.length) ? 'block' : 'none';
+        }
+
+        function calculateDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371; 
+            const dLat = (lat2 - lat1) * (Math.PI / 180);
+            const dLon = (lon2 - lon1) * (Math.PI / 180);
+            const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                      Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) *
+                      Math.sin(dLon / 2) * Math.sin(dLon / 2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+            return R * c;
+        }
+
+        window.onscroll = function() {
+            const btnTop = document.getElementById("btnTop");
+            if (document.body.scrollTop > 300 || document.documentElement.scrollTop > 300) {
+                btnTop.style.display = "flex";
+            } else {
+                btnTop.style.display = "none";
+            }
+        };
+
+        function scrollToTop() { window.scrollTo({ top: 0, behavior: 'smooth' }); }
+        
+        window.onload = () => {
+            document.getElementById('results').innerHTML = `<div style="text-align: center; color: var(--text-sub); padding: 20px; background: white; border-radius: 8px;">準備完了です。上のボタンから探してください。</div>`;
+        };
+    </script>
+</body>
+</html>
