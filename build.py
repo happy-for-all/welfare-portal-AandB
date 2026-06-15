@@ -122,7 +122,7 @@ def run_build():
             continue
 
         target_col = col_address_city[0]
-        df_filtered = df[df[target_col].str.startswith(("大阪府","東京都"), na=False)].copy()
+        df_filtered = df[df[target_col].str.startswith(("大阪府", "東京都"), na=False)].copy()
         
         facilities = []
         
