@@ -62,7 +62,8 @@ MUNICIPAL_COORDS = {
     "大阪狭山市": {"lat": 34.5036, "lon": 135.5519},
     "阪南市": {"lat": 34.3592, "lon": 135.2442},
     "泉南市": {"lat": 34.3725, "lon": 135.2758},
-    "フェイルセーフ大阪府庁": {"lat": 34.6862, "lon": 135.5201}
+    "フェイルセーフ大阪府庁": {"lat": 34.6862, "lon": 135.5201},
+    "フェイルセーフ東京都庁": {"lat": 35.6895, "lon": 139.6917} # 👑 追加
 }
 
 def safe_get(row, possible_keys):
@@ -121,7 +122,7 @@ def run_build():
             continue
 
         target_col = col_address_city[0]
-        df_filtered = df[df[target_col].str.startswith("大阪府", na=False)].copy()
+        df_filtered = df[df[target_col].str.startswith("大阪府","東京都" na=False)].copy()
         
         facilities = []
         
@@ -159,9 +160,13 @@ def run_build():
                 if detected_city:
                     lat = MUNICIPAL_COORDS[detected_city]["lat"]
                     lon = MUNICIPAL_COORDS[detected_city]["lon"]
-                else:
-                    lat = MUNICIPAL_COORDS["フェイルセーフ大阪府庁"]["lat"]
-                    lon = MUNICIPAL_COORDS["フェイルセーフ大阪府庁"]["lon"]
+                else:       
+                    if city.startswith("東京都"):
+                        lat = MUNICIPAL_COORDS["フェイルセーフ東京都庁"]["lat"]
+                        lon = MUNICIPAL_COORDS["フェイルセーフ東京都庁"]["lon"]
+                    else:            
+                        lat = MUNICIPAL_COORDS["フェイルセーフ大阪府庁"]["lat"]
+                        lon = MUNICIPAL_COORDS["フェイルセーフ大阪府庁"]["lon"]
 
             facilities.append({
                 "name": name,
