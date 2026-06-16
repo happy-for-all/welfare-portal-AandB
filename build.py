@@ -5,9 +5,12 @@ import zipfile
 import io
 import re
 import pandas as pd
+import unicodedata
+import math
+import shutil  # 👑 OSに依存せず安全にファイルをコピーするため
 
 # ==========================================
-# 👑 福祉ポータル(AandB): 複数サービス横断・自動ビルドエンジン (Ver 1.4.2 決定版)
+# 👑 福祉ポータル(AandB): 複数サービス横断・自動ビルドエンジン (Ver 1.4.5 超・鉄壁版)
 # 開発者: ちゃろ ＆ AIバディ
 # ==========================================
 
@@ -30,6 +33,7 @@ SERVICE_DEFINITIONS = [
 ]
 
 MUNICIPAL_COORDS = {
+    # 👑 関西（大阪府）主要市区町村
     "大阪市": {"lat": 34.6937, "lon": 135.5022},
     "堺市": {"lat": 34.5714, "lon": 135.4807},
     "東大阪市": {"lat": 34.6793, "lon": 135.5999},
@@ -62,17 +66,78 @@ MUNICIPAL_COORDS = {
     "大阪狭山市": {"lat": 34.5036, "lon": 135.5519},
     "阪南市": {"lat": 34.3592, "lon": 135.2442},
     "泉南市": {"lat": 34.3725, "lon": 135.2758},
+    
+    # 👑 関東（東京都）23区および主要市を追加（デグレなしの精度向上）
+    "千代田区": {"lat": 35.6940, "lon": 139.7536},
+    "中央区": {"lat": 35.6706, "lon": 139.7718},
+    "港区": {"lat": 35.6580, "lon": 139.7515},
+    "新宿区": {"lat": 35.6938, "lon": 139.7035},
+    "文京区": {"lat": 35.7080, "lon": 139.7521},
+    "台東区": {"lat": 35.7126, "lon": 139.7799},
+    "墨田区": {"lat": 35.7107, "lon": 139.8014},
+    "江東区": {"lat": 35.6728, "lon": 139.8174},
+    "品川区": {"lat": 35.6092, "lon": 139.7301},
+    "目黒区": {"lat": 35.6414, "lon": 139.6981},
+    "大田区": {"lat": 35.5612, "lon": 139.7160},
+    "世田谷区": {"lat": 35.6465, "lon": 139.6532},
+    "渋谷区": {"lat": 35.6617, "lon": 139.7040},
+    "中野区": {"lat": 35.7073, "lon": 139.6638},
+    "杉並区": {"lat": 35.6995, "lon": 139.6364},
+    "豊島区": {"lat": 35.7261, "lon": 139.7166},
+    "北区": {"lat": 35.7528, "lon": 139.7334},
+    "荒川区": {"lat": 35.7360, "lon": 139.7833},
+    "板橋区": {"lat": 35.7511, "lon": 139.7092},
+    "練馬区": {"lat": 35.7356, "lon": 139.6516},
+    "足立区": {"lat": 35.7756, "lon": 139.8044},
+    "葛飾区": {"lat": 35.7435, "lon": 139.8471},
+    "江戸川区": {"lat": 35.7066, "lon": 139.8684},
+    "八王子市": {"lat": 35.6663, "lon": 139.3158},
+    "町田市": {"lat": 35.5466, "lon": 139.4386},
+    "府中市": {"lat": 35.6689, "lon": 139.4776},
+    "調布市": {"lat": 35.6506, "lon": 139.5406},
+    "西東京市": {"lat": 35.7252, "lon": 139.5398},
+    "小平市": {"lat": 35.7285, "lon": 139.4774},
+    "三鷹市": {"lat": 35.6835, "lon": 139.5595},
+    "日野市": {"lat": 35.6713, "lon": 139.3949},
+    "立川市": {"lat": 35.7140, "lon": 139.4078},
+    
+    # 👑 最終手段のフェイルセーフ
     "フェイルセーフ大阪府庁": {"lat": 34.6862, "lon": 135.5201},
-    "フェイルセーフ東京都庁": {"lat": 35.6895, "lon": 139.6917} # 👑 追加
+    "フェイルセーフ東京都庁": {"lat": 35.6895, "lon": 139.6917}
 }
 
 def safe_get(row, possible_keys):
     for key in possible_keys:
         if key in row:
+            if pd.isna(row[key]):
+                continue
             value = str(row[key]).strip()
-            if value.lower() == "nan":
-                return ""
+            if value.lower() == "nan" or value == "":
+                continue
             return value
+    return ""
+
+def extract_clean_url(raw_text):
+    if not raw_text or pd.isna(raw_text):
+        return ""
+    
+    text = unicodedata.normalize('NFKC', str(raw_text)).replace('\n', '').replace('\r', '').strip()
+    
+    url_pattern = re.compile(r'(?:https?://|www\.)[a-zA-Z0-9\.\-\_]+[\w/\:\%\#\$\&\?\(\)\~\.\=\+\-]*')
+    match = url_pattern.search(text)
+    
+    if match:
+        extracted = match.group(0)
+        if extracted.startswith("www."):
+            extracted = "https://" + extracted
+        
+        extracted = extracted.rstrip('\'"）)]}>')
+        
+        if len(extracted) <= 8 and extracted.endswith("://"):
+            return ""
+            
+        return extracted
+        
     return ""
 
 def run_build():
@@ -98,7 +163,18 @@ def run_build():
 
         try:
             zip_file = zipfile.ZipFile(zip_file_path)
-            csv_filename = [f for f in zip_file.namelist() if f.endswith('.csv')][0]
+            csv_files = [f for f in zip_file.namelist() if f.lower().endswith('.csv') and not f.startswith('__MACOSX')]
+            
+            if not csv_files:
+                raise Exception("CSVファイルが見つかりません。")
+                
+            # 👑 【改善】CSVが複数ある場合、エラーで止めずに「一番サイズの大きいファイル」を本命として賢く選ぶ
+            if len(csv_files) > 1:
+                print(f"⚠️ [通知] ZIP内に複数のCSVを検出しました。最もサイズの大きいファイルを本命として処理します。")
+                csv_filename = max(csv_files, key=lambda f: zip_file.getinfo(f).file_size)
+            else:
+                csv_filename = csv_files[0]
+                
         except Exception as e:
             print(f"❌ ZIP解凍エラー ({service_name}): {e}")
             continue
@@ -117,9 +193,9 @@ def run_build():
             print(f"❌ CSV読込失敗 ({service_name})。スキップします。")
             continue
 
-        # 👑 【バグ修正】法人住所のすり抜けを防止するため、必ず「事業所」の市区町村列を狙い撃ちでターゲットにします
+        df.columns = df.columns.str.strip().str.replace('\n', '').str.replace('\r', '')
+
         target_col = "事業所住所（市区町村）"
-        # 表記揺れ（半角括弧）にも100%対応する安全ガード
         if "事業所住所（市区町村）" not in df.columns and "事業所住所(市区町村)" in df.columns:
             target_col = "事業所住所(市区町村)"
         
@@ -127,12 +203,14 @@ def run_build():
             print(f"❌ 事業所住所（市区町村）列が見つかりません ({service_name})。")
             continue
 
-        df_filtered = df[df[target_col].str.startswith(("大阪府", "東京都"), na=False)].copy()
+        df_filtered = df[df[target_col].astype(str).str.contains("大阪府|東京都", na=False)].copy()
         
         facilities = []
         
         for _, row in df_filtered.iterrows():
             name = safe_get(row, ["事業所の名称", "事業所名称"])
+            name_kana = safe_get(row, ["事業所の名称_かな", "事業所名称_かな", "フリガナ", "ふりがな"])
+            
             city = safe_get(row, ["事業所住所（市区町村）", "事業所住所(市区町村)", target_col])
             address_detail = safe_get(row, ["事業所住所（番地以降）", "事業所住所(番地以降)"])
             
@@ -146,6 +224,9 @@ def run_build():
             raw_lat = safe_get(row, ["事業所緯度", "緯度"])
             raw_lon = safe_get(row, ["事業所経度", "経度"])
             
+            raw_url_text = safe_get(row, ["事業所URL", "事業所ＵＲＬ", "ホームページ", "ホームページアドレス", "法人URL"])
+            clean_url = extract_clean_url(raw_url_text)
+            
             lat, lon = None, None
             is_approximate = False
             
@@ -154,6 +235,9 @@ def run_build():
                 if raw_lon: lon = float(raw_lon)
             except Exception:
                 pass
+                
+            if lat is not None and math.isnan(lat): lat = None
+            if lon is not None and math.isnan(lon): lon = None
                 
             if lat is None or lon is None:
                 is_approximate = True
@@ -175,12 +259,14 @@ def run_build():
 
             facilities.append({
                 "name": name,
+                "name_kana": name_kana,
                 "service_type": service_name,   
                 "address": address,
                 "tel": raw_tel,
                 "tel_clean": tel_clean,
                 "lat": round(lat, 6),
                 "lon": round(lon, 6),
+                "url": clean_url,
                 "is_approximate": is_approximate
             })
 
@@ -190,9 +276,7 @@ def run_build():
             
         summary_logs.append(f" - {service_name}: {len(facilities)}件 生成完了")
 
-    # 👑 【修正】不要な data.json の重複上書きブロックの削除報告注記を、
-    # 実行効率向上のためループの外側（出力完了ログの前）に移動しました。
-    os.system(f"cp index.html {target_dir}/")
+    shutil.copy2("index.html", os.path.join(target_dir, "index.html"))
     
     print("\n==========================================")
     for log in summary_logs: print(log)
