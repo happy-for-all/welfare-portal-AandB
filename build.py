@@ -10,7 +10,7 @@ import math
 import shutil  # 👑 OSに依存せず安全にファイルをコピーするため
 
 # ==========================================
-# 👑 福祉ポータル(AandB): 複数サービス横断・自動ビルドエンジン (Ver 1.4.5 超・鉄壁版)
+# 👑 福祉ポータル(AandB): 複数サービス横断・自動ビルドエンジン (Ver 1.4.6 関東・関西対応 鉄壁版)
 # 開発者: ちゃろ ＆ AIバディ
 # ==========================================
 
@@ -67,7 +67,7 @@ MUNICIPAL_COORDS = {
     "阪南市": {"lat": 34.3592, "lon": 135.2442},
     "泉南市": {"lat": 34.3725, "lon": 135.2758},
     
-    # 👑 関東（東京都）23区および主要市を追加（デグレなしの精度向上）
+    # 👑 関東（東京都）23区および主要市を追加
     "千代田区": {"lat": 35.6940, "lon": 139.7536},
     "中央区": {"lat": 35.6706, "lon": 139.7718},
     "港区": {"lat": 35.6580, "lon": 139.7515},
@@ -120,24 +120,17 @@ def safe_get(row, possible_keys):
 def extract_clean_url(raw_text):
     if not raw_text or pd.isna(raw_text):
         return ""
-    
     text = unicodedata.normalize('NFKC', str(raw_text)).replace('\n', '').replace('\r', '').strip()
-    
     url_pattern = re.compile(r'(?:https?://|www\.)[a-zA-Z0-9\.\-\_]+[\w/\:\%\#\$\&\?\(\)\~\.\=\+\-]*')
     match = url_pattern.search(text)
-    
     if match:
         extracted = match.group(0)
         if extracted.startswith("www."):
             extracted = "https://" + extracted
-        
         extracted = extracted.rstrip('\'"）)]}>')
-        
         if len(extracted) <= 8 and extracted.endswith("://"):
             return ""
-            
         return extracted
-        
     return ""
 
 def run_build():
@@ -168,9 +161,7 @@ def run_build():
             if not csv_files:
                 raise Exception("CSVファイルが見つかりません。")
                 
-            # 👑 【改善】CSVが複数ある場合、エラーで止めずに「一番サイズの大きいファイル」を本命として賢く選ぶ
             if len(csv_files) > 1:
-                print(f"⚠️ [通知] ZIP内に複数のCSVを検出しました。最もサイズの大きいファイルを本命として処理します。")
                 csv_filename = max(csv_files, key=lambda f: zip_file.getinfo(f).file_size)
             else:
                 csv_filename = csv_files[0]
@@ -195,14 +186,23 @@ def run_build():
 
         df.columns = df.columns.str.strip().str.replace('\n', '').str.replace('\r', '')
 
-        # 👑 【修正】列名の全角/半角・改行・スペース混在に対応した柔軟な列名検出
-        col_address_city = [col for col in df.columns if "住所" in col and "市区町村" in col]
-        if not col_address_city:
+        # 👑 【バグ修正】必ず「事業所の住所」をターゲットに固定する（法人住所バグの排除）
+        target_col = "事業所住所（市区町村）"
+        if target_col not in df.columns and "事業所住所(市区町村)" in df.columns:
+            target_col = "事業所住所(市区町村)"
+        
+        if target_col not in df.columns:
             print(f"❌ 事業所住所（市区町村）列が見つかりません ({service_name})。スキップします。")
             continue
-        target_col = col_address_city[0]
 
-        df_filtered = df[df[target_col].astype(str).str.contains("大阪府|東京都", na=False)].copy()
+        # 👑 【関東・関西 限定フィルター】
+        # 対象となる13都府県（関東・関西）のいずれかで始まる事業所だけを厳密に抽出します。
+        # これにより、北海道や沖縄は最初から混入せず、神奈川や滋賀も完璧に取得できます。
+        target_areas = (
+            "茨城県", "栃木県", "群馬県", "埼玉県", "千葉県", "東京都", "神奈川県",
+            "滋賀県", "京都府", "大阪府", "兵庫県", "奈良県", "和歌山県"
+        )
+        df_filtered = df[df[target_col].astype(str).str.startswith(target_areas, na=False)].copy()
         
         facilities = []
         
@@ -216,22 +216,6 @@ def run_build():
             if not re.search(r'[0-9０-９]', address_detail) or len(address_detail) <= 2:
                 address_detail = ""
             address = city + address_detail
-
-            
-            # 👑 【最強アドオン】関東・関西以外の「対象外エリア除外」フィルター
-            # 実際の事業所住所に、対象外の都道府県名が含まれていたら強制的に捨てる（名寄せバグ排除）
-            exclude_keywords = [
-                "北海道", "青森県", "岩手県", "宮城県", "秋田県", "山形県", "福島県",
-                "茨城県", "栃木県", "群馬県", "千葉県", "神奈川県", "埼玉県", "新潟県",
-                "富山県", "石川県", "福井県", "山梨県", "長野県", "岐阜県", "静岡県", "愛知県",
-                "三重県", "滋賀県", "京都府", "兵庫県", "奈良県", "和歌山県",
-                "鳥取県", "島根県", "岡山県", "広島県", "山口県",
-                "徳島県", "香川県", "愛媛県", "高知県",
-                "福岡県", "佐賀県", "長崎県", "熊本県", "大分県", "宮崎県", "鹿児島県", "沖縄県"
-            ]
-            if any(ex_kw in address for ex_kw in exclude_keywords):
-                continue # 北海道や沖縄などはここで完全に弾き落とされる
-            
             
             raw_tel = safe_get(row, ["事業所電話番号", "事業所連絡先", "電話番号"])
             tel_clean = re.sub(r'[^0-9\-]', '', raw_tel.translate(str.maketrans('０１２３４５６７８９', '0123456789')))
@@ -265,7 +249,9 @@ def run_build():
                     lat = MUNICIPAL_COORDS[detected_city]["lat"]
                     lon = MUNICIPAL_COORDS[detected_city]["lon"]
                 else:       
-                    if city.startswith("東京都"):
+                    # 👑 関東エリアは東京都庁、関西エリアは大阪府庁に安全にフェイルセーフ
+                    is_kanto = any(k in city for k in ["茨城", "栃木", "群馬", "埼玉", "千葉", "東京", "神奈川"])
+                    if is_kanto:
                         lat = MUNICIPAL_COORDS["フェイルセーフ東京都庁"]["lat"]
                         lon = MUNICIPAL_COORDS["フェイルセーフ東京都庁"]["lon"]
                     else:            
