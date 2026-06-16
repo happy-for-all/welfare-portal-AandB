@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="関東・関西の就労継続支援A型・B型、放課後等デイサービスを「現在地から近い順」に探せる無料検索ポータル。プロの相談員も愛用していただくために、複数サービスの横断・一括検索機能を搭載。お子様の発達支援から将来の就労・自立先探しまで、最適な施設選びをサポートします。どうぞお役立てください。">
-    
+    <meta name="description" content="東京都・大阪府の就労継続支援A型・B型、放課後等デイサービスを「現在地から近い順」に探せる無料検索ポータル。プロの相談員も愛用していただくために、複数サービスの横断・一括検索機能を搭載。お子様の発達支援から将来の就労・自立先探しまで、最適な施設選びをサポートします。どうぞお役立てください。">
+
     <!-- 👑 正規URLの指定 -->
     <link rel="canonical" href="https://for-welfare.pray-power-is-god-and-cocoro.com/welfare-portal-AandB/">
     
     <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%20100%20100%27%3E%3Ctext%20y%3D%270.9em%27%20font-size%3D%2790%27%3E%F0%9F%8C%BF%3C%2Ftext%3E%3C%2Fsvg%3E">
-    <title>就労・発達支援 総合検索ポータル（関東・関西版）</title>
+    <title>就労・発達支援 総合検索ポータル<br>（東京都・大阪府）</title>
 
 <!-- Google tag (gtag.js) -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-LTJJ73RNC5"></script>
@@ -66,7 +66,6 @@
         .btn-more { background-color: #ffffff; color: var(--main-green); border: 2px solid var(--main-green); padding: 12px 20px; font-size: 1rem; font-weight: bold; border-radius: 30px; width: 100%; cursor: pointer; margin-top: 10px; }
         .btn-top { position: fixed; bottom: 20px; right: 20px; background-color: var(--main-green); color: white; width: 50px; height: 50px; border-radius: 50%; border: none; font-size: 1.5rem; box-shadow: 0 4px 6px rgba(0,0,0,0.3); cursor: pointer; display: none; align-items: center; justify-content: center; z-index: 1000; }
 
-        /* 👑 寄付・広告用スタイル */
         .adsense-container { text-align: center; margin: 35px 0; min-height: 250px; background-color: rgba(255, 255, 255, 0.5); border-radius: 8px; display: flex; align-items: center; justify-content: center; border: 1px dashed #cbd5e1; }
         .donation-box { background-color: #ffffff; border: 1px solid var(--border-color); padding: 25px 20px; border-radius: 12px; text-align: center; margin-top: 40px; }
         .donation-title { color: var(--main-green); font-weight: bold; font-size: 1.1rem; margin-bottom: 10px; }
@@ -81,7 +80,7 @@
     <div class="container">
         <div class="disclaimer">
             <strong>【免責事項】</strong><br>
-            当サイトは行政の公開データ（2026年3月時点）を自動整理して表示しています。施設をご検討の際は、必ず直接お問い合わせください。関東と関西に対応しています。
+            当サイトは行政の公開データ（2026年3月時点）を自動整理して表示しています。施設をご検討の際は、必ず直接お問い合わせください。東京都と大阪府に対応しています。
         </div>
 
         <div class="pro-mode-toggle" onclick="toggleProMode()">
@@ -112,22 +111,20 @@
 
             <hr style="border: 0; border-top: 1px solid var(--border-color); margin: 25px 0;">
             <h3 style="font-size: 1rem; color: var(--text-main); margin-top: 0;">住所・施設名で絞り込む</h3>
-            <input type="text" id="searchInput" class="search-input" placeholder="例：東大阪市小阪" onkeypress="handleEnter(event)">
+            <input type="text" id="searchInput" class="search-input" placeholder="例：東大阪市、ひがしおおさか" onkeypress="handleEnter(event)">
             <button class="btn-search" onclick="searchByKeyword()">🔍 検索する</button>
         </div>
 
-        
-        <!-- 👑 【アドオン】位置情報の精度に関する誠実な注記案内 -->
         <div style="font-size: 0.8rem; color: var(--text-sub); margin-bottom: 15px; padding: 12px; background-color: rgba(255,255,255,0.45); border-radius: 8px; border: 1px solid var(--border-color); line-height: 1.5; text-align: left;">
             💡 <strong>【位置情報の精度について】</strong><br>
             表示される距離はお使いの端末のGPSから計算しています。元の行政データによっては、住所や座標が「詳細番地」ではなく「市区町村・区役所の代表点」で登録されている場合があり、その場合は距離が一律（例：東大阪市内なら一律約2.2kmなど）で計算・表示されます。お近くの地域にある施設としての目安としてご活用ください。
         </div>
 
-
         <div id="results"></div>
         <div id="moreContainer" style="text-align: center; display: none;">
             <button class="btn-more" onclick="showMore()">もっと見る ＋</button>
         </div>
+
 
        
         <div class="adsense-container" style="text-align: center; margin: 40px 0; min-height: 250px;">
@@ -141,6 +138,7 @@
             </script>
         </div>
         
+
 
         <!-- 👑 寄付支援セクション -->
         <div class="donation-box">
@@ -190,12 +188,24 @@
 
             allData = [];
             try {
-                const fetchPromises = filesToFetch.map(file => fetch('./' + file).then(res => res.json()));
-                const resultsArray = await Promise.all(fetchPromises);
+                const fetchPromises = filesToFetch.map(file => fetch('./' + file).then(res => {
+                    if (!res.ok) throw new Error("File not found");
+                    return res.json();
+                }));
+                const resultsArray = await Promise.allSettled(fetchPromises);
                 
-                resultsArray.forEach(dataArray => {
-                    allData = allData.concat(dataArray);
+                let successCount = 0;
+                resultsArray.forEach(result => {
+                    // 👑 【改善】万が一データが壊れて配列以外( {} など)が返ってきても、画面崩壊を防ぐ
+                    if (result.status === "fulfilled" && Array.isArray(result.value)) {
+                        allData = allData.concat(result.value);
+                        successCount++;
+                    }
                 });
+
+                if (successCount === 0) {
+                    throw new Error("All fetches failed");
+                }
                 return true;
             } catch (error) {
                 console.error(error);
@@ -238,7 +248,7 @@
         }
 
         async function searchByKeyword() {
-            const keyword = document.getElementById('searchInput').value.trim();
+            const keyword = document.getElementById('searchInput').value.trim().normalize("NFKC").toLowerCase();
             if (!keyword) {
                 alert("検索キーワードを入力してください。");
                 return;
@@ -248,7 +258,10 @@
             if(!success) return;
             
             displayData = allData.filter(item => {
-                return item.address.includes(keyword) || item.name.includes(keyword);
+                const addressStr = (item.address || "").normalize("NFKC").toLowerCase();
+                const nameStr = (item.name || "").normalize("NFKC").toLowerCase();
+                const kanaStr = (item.name_kana || "").normalize("NFKC").toLowerCase();
+                return addressStr.includes(keyword) || nameStr.includes(keyword) || kanaStr.includes(keyword);
             }).map(item => {
                 return { ...item, distance: null };
             });
@@ -294,13 +307,24 @@
                 } else {
                     telHtml = `<p style="color: var(--text-sub);">📞 電話番号情報なし</p>`;
                 }
+                
+                const hasHp = item.url && item.url.startsWith("http");
+                let titleHtml = "";
+                if (hasHp) {
+                    let hpBadge = `<a href="${item.url}" target="_blank" rel="noopener noreferrer" style="background-color: #10b981; color: white; padding: 3px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; margin-left: 8px; text-decoration: none; display: inline-block;">HPあり</a>`;
+                    titleHtml = `<h3 style="margin-top:5px; margin-bottom:5px; display:flex; align-items:center; flex-wrap:wrap;"><a href="${item.url}" target="_blank" rel="noopener noreferrer" style="color: var(--main-blue); text-decoration: underline;">🏠 ${item.name}</a> ${hpBadge}</h3>`;
+                } else {
+                    let hpBadge = `<span style="background-color: #94a3b8; color: white; padding: 3px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; margin-left: 8px; display: inline-block;">HPなし</span>`;
+                    titleHtml = `<h3 style="margin-top:5px; margin-bottom:5px; display:flex; align-items:center; flex-wrap:wrap;">🏠 ${item.name} ${hpBadge}</h3>`;
+                }
 
                 card.innerHTML = `
                     ${distanceHtml}<br>
                     <span class="service-tag ${tagClass}">${item.service_type}</span>
-                    <h3 style="margin-top:5px;">🏠 ${item.name}</h3>
-                    <p>📍 ${item.address}</p>
+                    ${titleHtml}
+                    <p style="margin-top: 8px;">📍 ${item.address}</p>
                     ${telHtml}
+                    ${hasHp ? `<p style="font-size: 0.75rem; color: #94a3b8; margin: 2px 0 0 0;">※事業所専用ではなく、運営法人の親サイトが表示される場合があります</p>` : ''}
                 `;
                 resultsDiv.appendChild(card);
             }
