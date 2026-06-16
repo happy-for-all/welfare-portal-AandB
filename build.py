@@ -286,4 +286,5 @@ if __name__ == "__main__":
     try:
         run_build()
     except Exception as e:
+        print(f"❌ [未予期エラー] ビルド中に重大なエラーが発生しました: {e}")
         sys.exit(1)
