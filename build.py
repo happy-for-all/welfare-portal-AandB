@@ -170,29 +170,28 @@ def extract_clean_url(raw_text):
         return extracted
     return ""
 
-# 👑 【アドオン】Googleマップの検索精度を劇的に上げるための住所整形関数
+# 👑 【アドオン】Googleマップの検索精度を劇的に上げるための住所整形関数（最強版）
 def extract_map_address(address):
     if not address:
         return address
-    
-    # 👑 全角数字・記号を半角に正規化
-    normalized = unicodedata.normalize('NFKC', address)
-    
-    # 👑 番地の終わりを示すパターン（これより後をカット）
-    cut_pattern = re.compile(
-        r'([0-9０-９]+[番号丁目条通][-−\s]?[0-9０-９]*[番号]?[-−\s]?[0-9０-９]*号?)'
-        r'|([0-9０-９]+-[0-9０-９]+-[0-9０-９]+)'
-        r'|([0-9０-９]+-[0-9０-９]+)'
+    s = unicodedata.normalize('NFKC', address)
+    s = re.sub(r'[\u2010-\u2015\u2212\uFF0D]', '-', s)  # 様々なダッシュ記号をハイフンに統一
+
+    chome = r'(?:[0-9]+条[西東南北]?)?[0-9]+丁目'
+    ban   = r'[0-9]+番地?'
+    gou   = r'[0-9]+号'
+    blocknum = r'[0-9]+(?:-[0-9]+)?'
+
+    pattern = re.compile(
+        rf'(?:{chome})?(?:{ban})?{gou}'
+        rf'|(?:{chome})?{ban}'
+        rf'|{chome}{blocknum}'
+        rf'|{chome}'
+        rf'|[0-9]+-[0-9]+-[0-9]+'
+        rf'|[0-9]+-[0-9]+'
     )
-    
-    match = None
-    for m in cut_pattern.finditer(normalized):
-        match = m
-    
-    if match:
-        return normalized[:match.end()].strip()
-    
-    return normalized
+    m = pattern.search(s)
+    return s[:m.end()].strip() if m else s
 
 def run_build():
     print("==========================================")
