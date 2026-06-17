@@ -10,7 +10,7 @@ import math
 import shutil  # 👑 OSに依存せず安全にファイルをコピーするため
 
 # ==========================================
-# 👑 福祉ポータル(AandB): 複数サービス横断・自動ビルドエンジン (Ver 1.4.6 関東・関西対応 鉄壁版)
+# 👑 福祉ポータル(AandB): 複数サービス横断・自動ビルドエンジン (Ver 1.4.7 真・完全版)
 # 開発者: ちゃろ ＆ AIバディ
 # ==========================================
 
@@ -32,8 +32,9 @@ SERVICE_DEFINITIONS = [
     },
 ]
 
+# 👑 【修正】HFA版と完全に同期した13都府県網羅辞書
 MUNICIPAL_COORDS = {
-    # 👑 関西（大阪府）主要市区町村
+    # 🌿 関西（大阪府）
     "大阪市": {"lat": 34.6937, "lon": 135.5022},
     "堺市": {"lat": 34.5714, "lon": 135.4807},
     "東大阪市": {"lat": 34.6793, "lon": 135.5999},
@@ -67,7 +68,17 @@ MUNICIPAL_COORDS = {
     "阪南市": {"lat": 34.3592, "lon": 135.2442},
     "泉南市": {"lat": 34.3725, "lon": 135.2758},
     
-    # 👑 関東（東京都）23区および主要市を追加
+    # 🌿 関西（大阪以外）
+    "京都市": {"lat": 35.0116, "lon": 135.7680},
+    "神戸市": {"lat": 34.6901, "lon": 135.1955},
+    "姫路市": {"lat": 34.8151, "lon": 134.6853},
+    "西宮市": {"lat": 34.7377, "lon": 135.3418},
+    "尼崎市": {"lat": 34.7335, "lon": 135.4063},
+    "奈良市": {"lat": 34.6851, "lon": 135.8048},
+    "和歌山市": {"lat": 34.2305, "lon": 135.1706},
+    "大津市": {"lat": 35.0145, "lon": 135.8522},
+
+    # 🌿 関東（東京都）
     "千代田区": {"lat": 35.6940, "lon": 139.7536},
     "中央区": {"lat": 35.6706, "lon": 139.7718},
     "港区": {"lat": 35.6580, "lon": 139.7515},
@@ -101,9 +112,29 @@ MUNICIPAL_COORDS = {
     "日野市": {"lat": 35.6713, "lon": 139.3949},
     "立川市": {"lat": 35.7140, "lon": 139.4078},
     
-    # 👑 最終手段のフェイルセーフ
+    # 🌿 関東（東京以外）
+    "横浜市": {"lat": 35.4478, "lon": 139.6425},
+    "川崎市": {"lat": 35.5308, "lon": 139.7029},
+    "さいたま市": {"lat": 35.8617, "lon": 139.6455},
+    "千葉市": {"lat": 35.6073, "lon": 140.1063},
+    "水戸市": {"lat": 36.3659, "lon": 140.4712},
+    "宇都宮市": {"lat": 36.5551, "lon": 139.8826},
+    "前橋市": {"lat": 36.3895, "lon": 139.0634},
+
+    # 👑 最終手段のフェイルセーフ（各府県庁）
+    "フェイルセーフ東京都庁": {"lat": 35.6895, "lon": 139.6917},
+    "フェイルセーフ神奈川県庁": {"lat": 35.4478, "lon": 139.6425},
+    "フェイルセーフ埼玉県庁": {"lat": 35.8569, "lon": 139.6489},
+    "フェイルセーフ千葉県庁": {"lat": 35.6047, "lon": 140.1232},
+    "フェイルセーフ茨城県庁": {"lat": 36.3418, "lon": 140.4468},
+    "フェイルセーフ栃木県庁": {"lat": 36.5657, "lon": 139.8836},
+    "フェイルセーフ群馬県庁": {"lat": 36.3911, "lon": 139.0608},
     "フェイルセーフ大阪府庁": {"lat": 34.6862, "lon": 135.5201},
-    "フェイルセーフ東京都庁": {"lat": 35.6895, "lon": 139.6917}
+    "フェイルセーフ京都府庁": {"lat": 35.0210, "lon": 135.7556},
+    "フェイルセーフ兵庫県庁": {"lat": 34.6913, "lon": 135.1830},
+    "フェイルセーフ奈良県庁": {"lat": 34.6853, "lon": 135.8327},
+    "フェイルセーフ和歌山県庁": {"lat": 34.2260, "lon": 135.1675},
+    "フェイルセーフ滋賀県庁": {"lat": 35.0045, "lon": 135.8686}
 }
 
 def safe_get(row, possible_keys):
@@ -186,23 +217,19 @@ def run_build():
 
         df.columns = df.columns.str.strip().str.replace('\n', '').str.replace('\r', '')
 
-        # 👑 【バグ修正】必ず「事業所の住所」をターゲットに固定する（法人住所バグの排除）
-        target_col = "事業所住所（市区町村）"
-        if target_col not in df.columns and "事業所住所(市区町村)" in df.columns:
-            target_col = "事業所住所(市区町村)"
-        
-        if target_col not in df.columns:
+        # 👑 【修正】AandB版も柔軟な列名検出に変更
+        col_address_city = [col for col in df.columns if "住所" in col and "市区町村" in col]
+        if not col_address_city:
             print(f"❌ 事業所住所（市区町村）列が見つかりません ({service_name})。スキップします。")
             continue
+        target_col = col_address_city[0]
 
-        # 👑 【関東・関西 限定フィルター】
-        # 対象となる13都府県（関東・関西）のいずれかで始まる事業所だけを厳密に抽出します。
-        # これにより、北海道や沖縄は最初から混入せず、神奈川や滋賀も完璧に取得できます。
-        target_areas = (
-            "茨城県", "栃木県", "群馬県", "埼玉県", "千葉県", "東京都", "神奈川県",
-            "滋賀県", "京都府", "大阪府", "兵庫県", "奈良県", "和歌山県"
+        # 👑 【重大バグ修正】たによん問題解決。strip()を挟んで空白を消してから判定する
+        target_prefectures = (
+            "東京都", "神奈川県", "埼玉県", "千葉県", "茨城県", "栃木県", "群馬県",
+            "大阪府", "京都府", "兵庫県", "奈良県", "和歌山県", "滋賀県"
         )
-        df_filtered = df[df[target_col].astype(str).str.startswith(target_areas, na=False)].copy()
+        df_filtered = df[df[target_col].astype(str).str.strip().str.startswith(target_prefectures, na=False)].copy()
         
         facilities = []
         
@@ -217,6 +244,17 @@ def run_build():
                 address_detail = ""
             address = city + address_detail
             
+            # 対象外エリアの二重ブロック
+            exclude_keywords = [
+                "北海道", "青森県", "岩手県", "宮城県", "秋田県", "山形県", "福島県",
+                "新潟県", "富山県", "石川県", "福井県", "山梨県", "長野県", "岐阜県", "静岡県", "愛知県",
+                "三重県", "鳥取県", "島根県", "岡山県", "広島県", "山口県",
+                "徳島県", "香川県", "愛媛県", "高知県",
+                "福岡県", "佐賀県", "長崎県", "熊本県", "大分県", "宮崎県", "鹿児島県", "沖縄県"
+            ]
+            if any(ex_kw in address for ex_kw in exclude_keywords):
+                continue
+
             raw_tel = safe_get(row, ["事業所電話番号", "事業所連絡先", "電話番号"])
             tel_clean = re.sub(r'[^0-9\-]', '', raw_tel.translate(str.maketrans('０１２３４５６７８９', '0123456789')))
 
@@ -240,23 +278,37 @@ def run_build():
                 
             if lat is None or lon is None:
                 is_approximate = True
+                
+                # 👑 【重大バグ修正】4文字県（神奈川県、和歌山県など）を正確に判定するロジック
+                matched_pref_len = 0
+                for pref in target_prefectures:
+                    if city.startswith(pref):
+                        matched_pref_len = len(pref)
+                        break
+                        
                 detected_city = None
                 for key in MUNICIPAL_COORDS.keys():
-                    if key in city and (city.index(key) == 3 or city.index(key) == 0):
+                    if key in city and (city.index(key) == matched_pref_len or city.index(key) == 0):
                         detected_city = key
                         break
+                        
                 if detected_city:
                     lat = MUNICIPAL_COORDS[detected_city]["lat"]
                     lon = MUNICIPAL_COORDS[detected_city]["lon"]
                 else:       
-                    # 👑 関東エリアは東京都庁、関西エリアは大阪府庁に安全にフェイルセーフ
-                    is_kanto = any(k in city for k in ["茨城", "栃木", "群馬", "埼玉", "千葉", "東京", "神奈川"])
-                    if is_kanto:
-                        lat = MUNICIPAL_COORDS["フェイルセーフ東京都庁"]["lat"]
-                        lon = MUNICIPAL_COORDS["フェイルセーフ東京都庁"]["lon"]
-                    else:            
-                        lat = MUNICIPAL_COORDS["フェイルセーフ大阪府庁"]["lat"]
-                        lon = MUNICIPAL_COORDS["フェイルセーフ大阪府庁"]["lon"]
+                    if city.startswith("東京都"): lat, lon = MUNICIPAL_COORDS["フェイルセーフ東京都庁"]["lat"], MUNICIPAL_COORDS["フェイルセーフ東京都庁"]["lon"]
+                    elif city.startswith("神奈川県"): lat, lon = MUNICIPAL_COORDS["フェイルセーフ神奈川県庁"]["lat"], MUNICIPAL_COORDS["フェイルセーフ神奈川県庁"]["lon"]
+                    elif city.startswith("埼玉県"): lat, lon = MUNICIPAL_COORDS["フェイルセーフ埼玉県庁"]["lat"], MUNICIPAL_COORDS["フェイルセーフ埼玉県庁"]["lon"]
+                    elif city.startswith("千葉県"): lat, lon = MUNICIPAL_COORDS["フェイルセーフ千葉県庁"]["lat"], MUNICIPAL_COORDS["フェイルセーフ千葉県庁"]["lon"]
+                    elif city.startswith("茨城県"): lat, lon = MUNICIPAL_COORDS["フェイルセーフ茨城県庁"]["lat"], MUNICIPAL_COORDS["フェイルセーフ茨城県庁"]["lon"]
+                    elif city.startswith("栃木県"): lat, lon = MUNICIPAL_COORDS["フェイルセーフ栃木県庁"]["lat"], MUNICIPAL_COORDS["フェイルセーフ栃木県庁"]["lon"]
+                    elif city.startswith("群馬県"): lat, lon = MUNICIPAL_COORDS["フェイルセーフ群馬県庁"]["lat"], MUNICIPAL_COORDS["フェイルセーフ群馬県庁"]["lon"]
+                    elif city.startswith("京都府"): lat, lon = MUNICIPAL_COORDS["フェイルセーフ京都府庁"]["lat"], MUNICIPAL_COORDS["フェイルセーフ京都府庁"]["lon"]
+                    elif city.startswith("兵庫県"): lat, lon = MUNICIPAL_COORDS["フェイルセーフ兵庫県庁"]["lat"], MUNICIPAL_COORDS["フェイルセーフ兵庫県庁"]["lon"]
+                    elif city.startswith("奈良県"): lat, lon = MUNICIPAL_COORDS["フェイルセーフ奈良県庁"]["lat"], MUNICIPAL_COORDS["フェイルセーフ奈良県庁"]["lon"]
+                    elif city.startswith("和歌山県"): lat, lon = MUNICIPAL_COORDS["フェイルセーフ和歌山県庁"]["lat"], MUNICIPAL_COORDS["フェイルセーフ和歌山県庁"]["lon"]
+                    elif city.startswith("滋賀県"): lat, lon = MUNICIPAL_COORDS["フェイルセーフ滋賀県庁"]["lat"], MUNICIPAL_COORDS["フェイルセーフ滋賀県庁"]["lon"]
+                    else: lat, lon = MUNICIPAL_COORDS["フェイルセーフ大阪府庁"]["lat"], MUNICIPAL_COORDS["フェイルセーフ大阪府庁"]["lon"]
 
             facilities.append({
                 "name": name,
