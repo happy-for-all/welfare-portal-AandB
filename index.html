@@ -318,11 +318,14 @@
                     titleHtml = `<h3 style="margin-top:5px; margin-bottom:5px; display:flex; align-items:center; flex-wrap:wrap;">🏠 ${item.name} ${hpBadge}</h3>`;
                 }
 
+                // 👑 【アドオン】Googleマップを開くためのURLを安全に生成
+                const mapUrl = `https://maps.google.com/maps?q=${encodeURIComponent(item.address)}`;
+                
                 card.innerHTML = `
                     ${distanceHtml}<br>
                     <span class="service-tag ${tagClass}">${item.service_type}</span>
                     ${titleHtml}
-                    <p style="margin-top: 8px;">📍 ${item.address}</p>
+                    <p style="margin-top: 8px;">📍 ${item.address} <a href="${mapUrl}" target="_blank" rel="noopener noreferrer" style="background-color: #4285f4; color: white; padding: 2px 7px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; text-decoration: none; margin-left: 6px; display: inline-block;">🗺 地図</a></p>
                     ${telHtml}
                     ${hasHp ? `<p style="font-size: 0.75rem; color: #94a3b8; margin: 2px 0 0 0;">※事業所専用ではなく、運営法人の親サイトが表示される場合があります</p>` : ''}
                 `;
