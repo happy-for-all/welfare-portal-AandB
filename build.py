@@ -170,6 +170,30 @@ def extract_clean_url(raw_text):
         return extracted
     return ""
 
+# 👑 【アドオン】Googleマップの検索精度を劇的に上げるための住所整形関数
+def extract_map_address(address):
+    if not address:
+        return address
+    
+    # 👑 全角数字・記号を半角に正規化
+    normalized = unicodedata.normalize('NFKC', address)
+    
+    # 👑 番地の終わりを示すパターン（これより後をカット）
+    cut_pattern = re.compile(
+        r'([0-9０-９]+[番号丁目条通][-−\s]?[0-9０-９]*[番号]?[-−\s]?[0-9０-９]*号?)'
+        r'|([0-9０-９]+-[0-9０-９]+-[0-9０-９]+)'
+        r'|([0-9０-９]+-[0-9０-９]+)'
+    )
+    
+    match = None
+    for m in cut_pattern.finditer(normalized):
+        match = m
+    
+    if match:
+        return normalized[:match.end()].strip()
+    
+    return normalized
+
 def run_build():
     print("==========================================")
     print(f"🌸 福祉ポータル(AandB) 複数サービス自動ビルド開始")
@@ -328,6 +352,7 @@ def run_build():
                 "name_kana": name_kana,
                 "service_type": service_name,   
                 "address": address,
+                "map_address": extract_map_address(address), # 👑 【追加】地図用の短縮住所
                 "tel": raw_tel,
                 "tel_clean": tel_clean,
                 "lat": round(lat, 6),
