@@ -319,7 +319,7 @@
                 }
 
                 // 👑 【アドオン】Googleマップを開くためのURLを安全に生成
-                const mapUrl = `https://maps.google.com/maps?q=${encodeURIComponent(item.address)}`;
+                const mapUrl = `https://maps.google.com/maps?q=${encodeURIComponent(item.map_address || item.address)}`;
                 
                 card.innerHTML = `
                     ${distanceHtml}<br>
