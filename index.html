@@ -318,8 +318,8 @@
                     titleHtml = `<h3 style="margin-top:5px; margin-bottom:5px; display:flex; align-items:center; flex-wrap:wrap;">🏠 ${item.name} ${hpBadge}</h3>`;
                 }
 
-                // 👑 【アドオン】Googleマップを開くためのURLを安全に生成
-                const mapUrl = `https://maps.google.com/maps?q=${encodeURIComponent(item.map_address || item.address)}`;
+                // 👑 【アドオン】Google公式の安全な検索URLに変更
+                const mapUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(item.map_address || item.address)}`;
                 
                 card.innerHTML = `
                     ${distanceHtml}<br>
