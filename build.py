@@ -7,15 +7,14 @@ import re
 import pandas as pd
 import unicodedata
 import math
-import shutil  # 👑 OSに依存せず安全にファイルをコピーするため
+import shutil
 
 # ==========================================
-# 👑 福祉ポータル(AandB): 複数サービス横断・自動ビルドエンジン (Ver 1.4.7 真・完全版)
+# 👑 福祉ポータル(AandB): 複数サービス横断・自動ビルドエンジン (Ver 1.4.8 詳細情報アドオン版)
 # 開発者: ちゃろ ＆ AIバディ
 # ==========================================
 
 # 👑 行政データの座標ミスを手動で補正するオーバーライド辞書
-# キー：事業所名（完全一致）、値：正確な座標
 COORD_OVERRIDES = {
     "ワンダーフレンズたによん": {"lat": 34.68364240190772, "lon": 135.51604704296957},
 }
@@ -38,7 +37,7 @@ SERVICE_DEFINITIONS = [
     },
 ]
 
-# 👑 【修正】HFA版と完全に同期した13都府県網羅辞書
+# 👑 HFA版と完全に同期した13都府県網羅辞書
 MUNICIPAL_COORDS = {
     # 🌿 関西（大阪府）
     "大阪市": {"lat": 34.6937, "lon": 135.5022},
@@ -170,12 +169,11 @@ def extract_clean_url(raw_text):
         return extracted
     return ""
 
-# 👑 【アドオン】Googleマップの検索精度を劇的に上げるための住所整形関数（最強版）
 def extract_map_address(address):
     if not address:
         return address
     s = unicodedata.normalize('NFKC', address)
-    s = re.sub(r'[\u2010-\u2015\u2212\uFF0D]', '-', s)  # 様々なダッシュ記号をハイフンに統一
+    s = re.sub(r'[\u2010-\u2015\u2212\uFF0D]', '-', s)
 
     chome = r'(?:[0-9]+条[西東南北]?)?[0-9]+丁目'
     ban   = r'[0-9]+番地?'
@@ -198,6 +196,7 @@ def run_build():
     print(f"🌸 福祉ポータル(AandB) 複数サービス自動ビルド開始")
     print("==========================================")
 
+    # 👑 元のディレクトリ構造を完璧に維持します
     target_dir = os.path.join("dist", "welfare-portal-AandB")
     os.makedirs(target_dir, exist_ok=True)
     
@@ -246,14 +245,13 @@ def run_build():
 
         df.columns = df.columns.str.strip().str.replace('\n', '').str.replace('\r', '')
 
-        # 👑 【最強アドオン】法人住所を絶対に拾わず、表記揺れにも完璧に対応する列検出
         col_address_city = [col for col in df.columns if "事業所" in col and "住所" in col and "市区町村" in col]
         if not col_address_city:
             print(f"❌ 事業所住所（市区町村）列が見つかりません ({service_name})。スキップします。")
             continue
         target_col = col_address_city[0]
 
-        # 👑 【重大バグ修正】たによん問題解決。strip()を挟んで空白を消してから判定する
+        # 👑 AandBの13都府県絞り込みロジックをそのまま維持
         target_prefectures = (
             "東京都", "神奈川県", "埼玉県", "千葉県", "茨城県", "栃木県", "群馬県",
             "大阪府", "京都府", "兵庫県", "奈良県", "和歌山県", "滋賀県"
@@ -273,7 +271,7 @@ def run_build():
                 address_detail = ""
             address = city + address_detail
             
-            # 対象外エリアの二重ブロック
+            # 対象外エリアの二重ブロックをそのまま維持
             exclude_keywords = [
                 "北海道", "青森県", "岩手県", "宮城県", "秋田県", "山形県", "福島県",
                 "新潟県", "富山県", "石川県", "福井県", "山梨県", "長野県", "岐阜県", "静岡県", "愛知県",
@@ -293,6 +291,15 @@ def run_build():
             raw_url_text = safe_get(row, ["事業所URL", "事業所ＵＲＬ", "ホームページ", "ホームページアドレス", "法人URL"])
             clean_url = extract_clean_url(raw_url_text)
             
+            # 👑 【アドオン移植】詳細情報の安全な取得（※放デイなどで列がない場合もエラーになりません）
+            time_weekday = safe_get(row, ["利用可能な時間帯（平日）"])
+            time_saturday = safe_get(row, ["利用可能な時間帯（土曜）"])
+            time_sunday = safe_get(row, ["利用可能な時間帯（日曜）"])
+            time_holiday = safe_get(row, ["利用可能な時間帯（祝日）"])
+            day_off = safe_get(row, ["定休日"])
+            notes = safe_get(row, ["利用可能曜日特記事項（留意事項）"])
+            capacity = safe_get(row, ["定員"])
+
             lat, lon = None, None
             is_approximate = False
             
@@ -308,7 +315,6 @@ def run_build():
             if lat is None or lon is None:
                 is_approximate = True
                 
-                # 👑 【重大バグ修正】4文字県（神奈川県、和歌山県など）を正確に判定するロジック
                 matched_pref_len = 0
                 for pref in target_prefectures:
                     if city.startswith(pref):
@@ -339,8 +345,6 @@ def run_build():
                     elif city.startswith("滋賀県"): lat, lon = MUNICIPAL_COORDS["フェイルセーフ滋賀県庁"]["lat"], MUNICIPAL_COORDS["フェイルセーフ滋賀県庁"]["lon"]
                     else: lat, lon = MUNICIPAL_COORDS["フェイルセーフ大阪府庁"]["lat"], MUNICIPAL_COORDS["フェイルセーフ大阪府庁"]["lon"]
 
-
-            # 👑 座標オーバーライドの適用（行政データの座標ミスを補正）
             if name in COORD_OVERRIDES:
                 lat = COORD_OVERRIDES[name]["lat"]
                 lon = COORD_OVERRIDES[name]["lon"]
@@ -351,13 +355,21 @@ def run_build():
                 "name_kana": name_kana,
                 "service_type": service_name,   
                 "address": address,
-                "map_address": extract_map_address(address), # 👑 【追加】地図用の短縮住所
+                "map_address": extract_map_address(address),
                 "tel": raw_tel,
                 "tel_clean": tel_clean,
                 "lat": round(lat, 6),
                 "lon": round(lon, 6),
                 "url": clean_url,
-                "is_approximate": is_approximate
+                "is_approximate": is_approximate,
+                # 👑 【アドオン移植】JSONへの格納
+                "time_weekday": time_weekday,
+                "time_saturday": time_saturday,
+                "time_sunday": time_sunday,
+                "time_holiday": time_holiday,
+                "day_off": day_off,
+                "notes": notes,
+                "capacity": capacity
             })
 
         output_path = os.path.join(target_dir, f"data_{output_key}.json")
@@ -366,7 +378,8 @@ def run_build():
             
         summary_logs.append(f" - {service_name}: {len(facilities)}件 生成完了")
 
-    shutil.copy2("index.html", os.path.join(target_dir, "index.html"))
+    if os.path.exists("index.html"):
+        shutil.copy2("index.html", os.path.join(target_dir, "index.html"))
     
     print("\n==========================================")
     for log in summary_logs: print(log)
