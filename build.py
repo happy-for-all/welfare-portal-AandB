@@ -10,8 +10,9 @@ import math
 import shutil
 
 # ==========================================
-# 👑 福祉ポータル(AandB): 複数サービス横断・自動ビルドエンジン (Ver 1.4.8 詳細情報アドオン版)
+# 👑 福祉ポータル(AandB): 複数サービス横断・自動ビルドエンジン (Ver 1.4.9 堅牢化アドオン版)
 # 開発者: ちゃろ ＆ AIバディ
+# 理念: HFA (Happy for All)
 # ==========================================
 
 # 👑 行政データの座標ミスを手動で補正するオーバーライド辞書
@@ -37,7 +38,7 @@ SERVICE_DEFINITIONS = [
     },
 ]
 
-# 👑 HFA版と完全に同期した13都府県網羅辞書
+# 👑 関東・関西限定の13都府県網羅辞書
 MUNICIPAL_COORDS = {
     # 🌿 関西（大阪府）
     "大阪市": {"lat": 34.6937, "lon": 135.5022},
@@ -196,7 +197,11 @@ def run_build():
     print(f"🌸 福祉ポータル(AandB) 複数サービス自動ビルド開始")
     print("==========================================")
 
-    # 👑 元のディレクトリ構造を完璧に維持します
+    # 👑 【改善適用】ビルド前に dist フォルダをクリアして安全な状態を作る
+    dist_root = "dist"
+    if os.path.exists(dist_root):
+        shutil.rmtree(dist_root)
+    
     target_dir = os.path.join("dist", "welfare-portal-AandB")
     os.makedirs(target_dir, exist_ok=True)
     
@@ -213,31 +218,32 @@ def run_build():
             print(f"⚠️ [警告] 『{zip_file_path}』が見つかりません。スキップします。")
             continue
 
+        df = None
+        # 👑 【改善適用】zip_file の開始から CSV 読み込みまで全体を with でまとめて安全に囲む
         try:
-            zip_file = zipfile.ZipFile(zip_file_path)
-            csv_files = [f for f in zip_file.namelist() if f.lower().endswith('.csv') and not f.startswith('__MACOSX')]
-            
-            if not csv_files:
-                raise Exception("CSVファイルが見つかりません。")
+            with zipfile.ZipFile(zip_file_path) as zip_file:
+                csv_files = [f for f in zip_file.namelist() if f.lower().endswith('.csv') and not f.startswith('__MACOSX')]
                 
-            if len(csv_files) > 1:
-                csv_filename = max(csv_files, key=lambda f: zip_file.getinfo(f).file_size)
-            else:
-                csv_filename = csv_files[0]
-                
+                if not csv_files:
+                    raise Exception("CSVファイルが見つかりません。")
+                    
+                if len(csv_files) > 1:
+                    csv_filename = max(csv_files, key=lambda f: zip_file.getinfo(f).file_size)
+                else:
+                    csv_filename = csv_files[0]
+                    
+                encodings = ["utf-8-sig", "shift_jis", "cp932", "utf-8"]
+                for enc in encodings:
+                    try:
+                        with zip_file.open(csv_filename) as f:
+                            df = pd.read_csv(f, encoding=enc, dtype=str)
+                        break
+                    except Exception:
+                        continue
         except Exception as e:
             print(f"❌ ZIP解凍エラー ({service_name}): {e}")
+            # AandBでは他のサービス（放デイ等）のZIPがあるかもしれないためcontinueで次へ回す
             continue
-
-        df = None
-        encodings = ["utf-8-sig", "shift_jis", "cp932", "utf-8"]
-        for enc in encodings:
-            try:
-                with zip_file.open(csv_filename) as f:
-                    df = pd.read_csv(f, encoding=enc, dtype=str)
-                break
-            except Exception:
-                continue
 
         if df is None:
             print(f"❌ CSV読込失敗 ({service_name})。スキップします。")
@@ -251,7 +257,7 @@ def run_build():
             continue
         target_col = col_address_city[0]
 
-        # 👑 AandBの13都府県絞り込みロジックをそのまま維持
+        # 👑 AandBの関東・関西13都府県絞り込みロジックを維持
         target_prefectures = (
             "東京都", "神奈川県", "埼玉県", "千葉県", "茨城県", "栃木県", "群馬県",
             "大阪府", "京都府", "兵庫県", "奈良県", "和歌山県", "滋賀県"
@@ -267,11 +273,14 @@ def run_build():
             city = safe_get(row, ["事業所住所（市区町村）", "事業所住所(市区町村)", target_col])
             address_detail = safe_get(row, ["事業所住所（番地以降）", "事業所住所(番地以降)"])
             
-            if not re.search(r'[0-9０-９]', address_detail) or len(address_detail) <= 2:
+            # 👑 【改善適用】address_detail の長さ判定を正規化後に行う
+            address_detail_normalized = unicodedata.normalize('NFKC', address_detail)
+            if not re.search(r'[0-9]', address_detail_normalized) or len(address_detail_normalized) <= 2:
                 address_detail = ""
+                
             address = city + address_detail
             
-            # 対象外エリアの二重ブロックをそのまま維持
+            # 👑 AandBの対象外エリア二重ブロックを維持
             exclude_keywords = [
                 "北海道", "青森県", "岩手県", "宮城県", "秋田県", "山形県", "福島県",
                 "新潟県", "富山県", "石川県", "福井県", "山梨県", "長野県", "岐阜県", "静岡県", "愛知県",
@@ -291,7 +300,7 @@ def run_build():
             raw_url_text = safe_get(row, ["事業所URL", "事業所ＵＲＬ", "ホームページ", "ホームページアドレス", "法人URL"])
             clean_url = extract_clean_url(raw_url_text)
             
-            # 👑 【アドオン移植】詳細情報の安全な取得（※放デイなどで列がない場合もエラーになりません）
+            # 👑 【アドオン移植】詳細情報の安全な取得
             time_weekday = safe_get(row, ["利用可能な時間帯（平日）"])
             time_saturday = safe_get(row, ["利用可能な時間帯（土曜）"])
             time_sunday = safe_get(row, ["利用可能な時間帯（日曜）"])
@@ -343,6 +352,8 @@ def run_build():
                     elif city.startswith("奈良県"): lat, lon = MUNICIPAL_COORDS["フェイルセーフ奈良県庁"]["lat"], MUNICIPAL_COORDS["フェイルセーフ奈良県庁"]["lon"]
                     elif city.startswith("和歌山県"): lat, lon = MUNICIPAL_COORDS["フェイルセーフ和歌山県庁"]["lat"], MUNICIPAL_COORDS["フェイルセーフ和歌山県庁"]["lon"]
                     elif city.startswith("滋賀県"): lat, lon = MUNICIPAL_COORDS["フェイルセーフ滋賀県庁"]["lat"], MUNICIPAL_COORDS["フェイルセーフ滋賀県庁"]["lon"]
+                    # 👑 【改善適用】大阪府の明示的追加
+                    elif city.startswith("大阪府"): lat, lon = MUNICIPAL_COORDS["フェイルセーフ大阪府庁"]["lat"], MUNICIPAL_COORDS["フェイルセーフ大阪府庁"]["lon"]
                     else: lat, lon = MUNICIPAL_COORDS["フェイルセーフ大阪府庁"]["lat"], MUNICIPAL_COORDS["フェイルセーフ大阪府庁"]["lon"]
 
             if name in COORD_OVERRIDES:
@@ -362,7 +373,6 @@ def run_build():
                 "lon": round(lon, 6),
                 "url": clean_url,
                 "is_approximate": is_approximate,
-                # 👑 【アドオン移植】JSONへの格納
                 "time_weekday": time_weekday,
                 "time_saturday": time_saturday,
                 "time_sunday": time_sunday,
