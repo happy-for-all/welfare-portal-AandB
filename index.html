@@ -63,7 +63,7 @@
         .tag-houdei { background-color: #e84393; }
         .tag-default { background-color: var(--main-green); }
 
-        /* 👑 【アドオン】詳細情報アコーディオン用CSS */
+        /* 👑 詳細情報アコーディオン用CSS */
         details.facility-details { margin-top: 15px; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px; padding: 12px; }
         details.facility-details summary { cursor: pointer; color: #0284c7; font-weight: bold; font-size: 0.9rem; list-style: none; display: flex; align-items: center; justify-content: center; }
         details.facility-details summary::-webkit-details-marker { display: none; }
@@ -281,12 +281,35 @@
 
         function handleEnter(e) { if (e.key === 'Enter') searchByKeyword(); }
 
+        // 👑 【改善適用】サニタイズ関数を追加（XSS攻撃防止）
+        function sanitize(str) {
+            if (!str) return '';
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;');
+        }
+
         function showMore() {
             const resultsDiv = document.getElementById('results');
             const limit = Math.min(currentIndex + ITEMS_PER_PAGE, displayData.length);
 
             for (let i = currentIndex; i < limit; i++) {
                 const item = displayData[i];
+                
+                // 👑 【改善適用】HTMLに埋め込む前にデータを安全にサニタイズする
+                const sName = sanitize(item.name);
+                const sAddress = sanitize(item.address);
+                const sTel = sanitize(item.tel);
+                const sTimeWeekday = sanitize(item.time_weekday);
+                const sTimeSaturday = sanitize(item.time_saturday);
+                const sTimeSunday = sanitize(item.time_sunday);
+                const sTimeHoliday = sanitize(item.time_holiday);
+                const sDayOff = sanitize(item.day_off);
+                const sNotes = sanitize(item.notes);
+                const sCapacity = sanitize(item.capacity);
+
                 const card = document.createElement('div');
                 card.className = "card";
                 
@@ -305,7 +328,7 @@
 
                 let telHtml = "";
                 if (item.tel_clean && item.tel_clean.length > 0) {
-                    telHtml = `<p>📞 電話: <a href="tel:${item.tel_clean}" class="tel-link">${item.tel}</a></p>`;
+                    telHtml = `<p>📞 電話: <a href="tel:${item.tel_clean}" class="tel-link">${sTel}</a></p>`;
                 } else {
                     telHtml = `<p style="color: var(--text-sub);">📞 電話番号情報なし</p>`;
                 }
@@ -314,36 +337,36 @@
                 let titleHtml = "";
                 if (hasHp) {
                     let hpBadge = `<a href="${item.url}" target="_blank" rel="noopener noreferrer" style="background-color: #10b981; color: white; padding: 3px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; margin-left: 8px; text-decoration: none; display: inline-block;">HPあり</a>`;
-                    titleHtml = `<h3 style="margin-top:5px; margin-bottom:5px; display:flex; align-items:center; flex-wrap:wrap;"><a href="${item.url}" target="_blank" rel="noopener noreferrer" style="color: var(--main-blue); text-decoration: underline;">🏠 ${item.name}</a> ${hpBadge}</h3>`;
+                    titleHtml = `<h3 style="margin-top:5px; margin-bottom:5px; display:flex; align-items:center; flex-wrap:wrap;"><a href="${item.url}" target="_blank" rel="noopener noreferrer" style="color: var(--main-blue); text-decoration: underline;">🏠 ${sName}</a> ${hpBadge}</h3>`;
                 } else {
                     let hpBadge = `<span style="background-color: #94a3b8; color: white; padding: 3px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; margin-left: 8px; display: inline-block;">HPなし</span>`;
-                    titleHtml = `<h3 style="margin-top:5px; margin-bottom:5px; display:flex; align-items:center; flex-wrap:wrap;">🏠 ${item.name} ${hpBadge}</h3>`;
+                    titleHtml = `<h3 style="margin-top:5px; margin-bottom:5px; display:flex; align-items:center; flex-wrap:wrap;">🏠 ${sName} ${hpBadge}</h3>`;
                 }
 
                 const mapUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(item.map_address || item.address)}`;
                 
-                // 👑 【アドオン移植】詳細情報のアコーディオン
-                // 古いデータで項目が存在しない場合は「記載なし」として安全に表示
+                // 👑 【アドオン】詳細情報のアコーディオン（AandB仕様）
                 const detailHtml = `
                 <details class="facility-details">
                     <summary>🕒 開所時間・定員などの詳細を見る ▼</summary>
                     <div class="detail-content">
-                        <p><strong>【平日】</strong> ${item.time_weekday || '記載なし'}</p>
-                        <p><strong>【土曜】</strong> ${item.time_saturday || '記載なし'}</p>
-                        <p><strong>【日曜】</strong> ${item.time_sunday || '記載なし'}</p>
-                        <p><strong>【祝日】</strong> ${item.time_holiday || '記載なし'}</p>
-                        <p><strong>【定休日】</strong> ${item.day_off || '記載なし'}</p>
-                        <p><strong>【定員】</strong> ${item.capacity ? item.capacity + '名' : '記載なし'}</p>
-                        <p><strong>【特記事項】</strong><br>${item.notes || '特になし'}</p>
+                        <p><strong>【平日】</strong> ${sTimeWeekday || '記載なし'}</p>
+                        <p><strong>【土曜】</strong> ${sTimeSaturday || '記載なし'}</p>
+                        <p><strong>【日曜】</strong> ${sTimeSunday || '記載なし'}</p>
+                        <p><strong>【祝日】</strong> ${sTimeHoliday || '記載なし'}</p>
+                        <p><strong>【定休日】</strong> ${sDayOff || '記載なし'}</p>
+                        <p><strong>【定員】</strong> ${sCapacity ? sCapacity + '名' : '記載なし'}</p>
+                        <p><strong>【特記事項】</strong><br>${sNotes || '特になし'}</p>
                     </div>
                 </details>
                 `;
 
+                // 👑 【重要】AandB特有の「運営法人の親サイトが表示される場合〜」の注記を完全に維持
                 card.innerHTML = `
                     ${distanceHtml}<br>
                     <span class="service-tag ${tagClass}">${item.service_type}</span>
                     ${titleHtml}
-                    <p style="margin-top: 8px;">📍 ${item.address} <a href="${mapUrl}" target="_blank" rel="noopener noreferrer" style="background-color: #4285f4; color: white; padding: 2px 7px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; text-decoration: none; margin-left: 6px; display: inline-block;">🗺 地図</a></p>
+                    <p style="margin-top: 8px;">📍 ${sAddress} <a href="${mapUrl}" target="_blank" rel="noopener noreferrer" style="background-color: #4285f4; color: white; padding: 2px 7px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; text-decoration: none; margin-left: 6px; display: inline-block;">🗺 地図</a></p>
                     ${telHtml}
                     ${hasHp ? `<p style="font-size: 0.75rem; color: #94a3b8; margin: 2px 0 0 0;">※事業所専用ではなく、運営法人の親サイトが表示される場合があります</p>` : ''}
                     ${detailHtml}
