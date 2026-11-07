@@ -73,17 +73,17 @@ PREFECTURE_OFFICES = {
 
 SERVICE_DEFINITIONS = [
     {
-        "zip_file": "sfkopendata_202603_45.zip",
+        "zip_file": "sfkopendata_202609_45.zip",
         "service_name": "就労継続支援Ａ型",
         "output_key": "shuro_a",
     },
     {
-        "zip_file": "sfkopendata_202603_46.zip",
+        "zip_file": "sfkopendata_202609_46.zip",
         "service_name": "就労継続支援Ｂ型",
         "output_key": "shuro_b",
     },
     {
-        "zip_file": "sfkopendata_202603_65.zip",
+        "zip_file": "sfkopendata_202609_65.zip",
         "service_name": "放課後等デイサービス",
         "output_key": "houdei",
     },
